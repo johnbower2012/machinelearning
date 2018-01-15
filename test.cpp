@@ -17,7 +17,7 @@ int main(int argc, char* argv[]){
 	delta1.print();
 	std::cout << "22222222222222222222222222222222" << std::endl;
 	delta2.print();
-	delta2.random();
+	delta2.random_normal(0.0,1.0);
 	std::cout << "22222222222222222222222222222222" << std::endl;	
 	delta2.print();
 	delta1.copy(delta2);

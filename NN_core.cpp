@@ -47,12 +47,12 @@ void NN_core::copy(NN_core& copy){
 		}
 	}
 }
-void NN_core::random(){
+void NN_core::random_normal(double mean, double variance){
 	int i, j, k,
 		ith_size, iplus1th_size;
 	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 	std::default_random_engine generator(seed);
-	std::normal_distribution<double> dist(0,1.0);
+	std::normal_distribution<double> dist(mean,sqrt(variance));
 	double random;
 
 	for(i=0;i<num_layers-1;i++){

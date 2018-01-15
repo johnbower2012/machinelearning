@@ -19,7 +19,7 @@ class NN_core{
 		~NN_core();
 
 		void copy(NN_core&);
-		void random();
+		void random_normal(double,double);
 		void print();
 };
 
