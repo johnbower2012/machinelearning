@@ -6,7 +6,7 @@
 #include<cstdlib>
 #include "armadillo"
 
-class NN_core{
+class nn_core{
 	public:
 		int num_layers;
 	
@@ -14,11 +14,11 @@ class NN_core{
 		arma::vec*	bias_vecs; 
 		arma::mat*	weights_mats;
 
-		NN_core();
-		NN_core(arma::vec);
-		~NN_core();
+		nn_core();
+		nn_core(arma::vec);
+		~nn_core();
 
-		void copy(NN_core&);
+		void copy(nn_core&);
 		void random_normal(double,double);
 		void print();
 };

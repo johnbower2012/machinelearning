@@ -1,14 +1,14 @@
-#include "NN_core.hpp"
+#include "nn_core.hpp"
 
-NN_core::NN_core(){
+nn_core::nn_core(){
 	num_layers = 0;
 	bias_vecs = nullptr;
 	weights_mats = nullptr;
 }
-NN_core::NN_core(arma::vec input_vec){
+nn_core::nn_core(arma::vec sizes){
 	int i, ith_size, iplus1th_size;
 
-	sizes_vec = input_vec;
+	sizes_vec = sizes;
 	num_layers = sizes_vec.n_elem;
 
 	bias_vecs = new arma::vec[num_layers-1];
@@ -22,13 +22,13 @@ NN_core::NN_core(arma::vec input_vec){
 		weights_mats[i] = arma::zeros<arma::mat>(iplus1th_size,ith_size);
 	}
 }
-NN_core::~NN_core(){
+nn_core::~nn_core(){
 	num_layers = 0;
 	delete[] bias_vecs;
 	delete[] weights_mats;
 }
 
-void NN_core::copy(NN_core& copy){
+void nn_core::copy(nn_core& copy){
 	int i, j, k,
 		l1, l2;
 	num_layers = copy.num_layers;
@@ -47,7 +47,7 @@ void NN_core::copy(NN_core& copy){
 		}
 	}
 }
-void NN_core::random_normal(double mean, double variance){
+void nn_core::random_normal(double mean, double variance){
 	int i, j, k,
 		ith_size, iplus1th_size;
 	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
@@ -68,7 +68,7 @@ void NN_core::random_normal(double mean, double variance){
 		}
 	}
 }
-void NN_core::print(){
+void nn_core::print(){
 	int i, j, k,
 		l1, l2;
 
