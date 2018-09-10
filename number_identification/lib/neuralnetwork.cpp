@@ -16,9 +16,8 @@ CNeuralNetwork::~CNeuralNetwork(){
 }
 std::vector<double> CNeuralNetwork::FeedForward(std::vector<double> Feed){
   int number_of_layers = layers.size();
-  std::vector<double> temp_next=Feed,temp_now;
+  std::vector<double> temp_next,temp_now=Feed;
   for(int layer=0;layer<number_of_layers-1;layer++){
-    temp_now = temp_next;
     int nodes_next=layers[layer+1];
     temp_next.resize(nodes_next,0.0);
     for(int node_next=0;node_next<nodes_next;node_next++){
@@ -28,8 +27,8 @@ std::vector<double> CNeuralNetwork::FeedForward(std::vector<double> Feed){
       }
       temp_next[node_next] += this->core.biases[layer][node_next];
     }
+    temp_now = Sigmoid(temp_next);
   }
-  temp_now = Sigmoid(temp_next);
   return temp_now;
 }
 std::vector<double> CNeuralNetwork::AdvanceLayer(std::vector<double> Feed, int Layer){
@@ -55,41 +54,57 @@ std::vector<double> CNeuralNetwork::CostDerivative(std::vector<double> Activatio
 SNNCore CNeuralNetwork::BackPropogation(MNISTData Mnist,int datum){
   int numberOfData = Mnist.labels.size(), nodes_next, nodes_now;
   std::vector<double> costder, fedforward, sigmaprime, label;
-  std::vector<double> *activations, *error;
+  std::vector<double> *z, *activations, *error;
   SNNCore delta;
   int numberOfLayers = this->layers.size();
   //dynamic memory allocation
+  z = new std::vector<double>[numberOfLayers];
   activations = new std::vector<double>[numberOfLayers];
   error = new std::vector<double>[numberOfLayers-1];
   delta.biases = new std::vector<double>[numberOfLayers-1];
   delta.weights = new std::vector<std::vector<double> >[numberOfLayers-1];
   //assign memory && calculate activations
+  z[0] = Mnist.data[datum];
   activations[0] = Mnist.data[datum];
   for(int layer=0;layer<numberOfLayers-1;layer++){
-    fedforward = AdvanceLayer(Mnist.data[datum],layer);
-    activations[layer+1] = Sigmoid(fedforward);
+    z[layer+1] = AdvanceLayer(activations[layer],layer);
+    activations[layer+1] = Sigmoid(z[layer+1]);
+    Print_Vector(z[layer+1]);
+    Print_Vector(activations[layer+1]);
     delta.biases[layer] = std::vector<double> (this->layers[layer+1]);
     delta.weights[layer] = std::vector<std::vector<double> > (this->layers[layer+1],std::vector<double>(this->layers[layer]));
   }
   //calculate error for final layer
   label = LabelToVector(Mnist.labels[datum]);
   costder = CostDerivative(activations[numberOfLayers-1],label);
-  fedforward = AdvanceLayer(Mnist.data[datum],numberOfLayers-2);
-  sigmaprime = SigmoidDerivative(fedforward);
-  error[numberOfLayers-1] = HadamardProduct(costder,sigmaprime);
-  //calculate error for each layer, final-1, final-2,...,1
+  sigmaprime = SigmoidDerivative(z[numberOfLayers-1]);
+  Print_Vector(sigmaprime);
+  error[numberOfLayers-2] = HadamardProduct(costder,sigmaprime);
+  printf("error%d:",numberOfLayers-2);
+  Print_Vector(error[numberOfLayers-2]);
+  //calculate error for each layer, final-1, final-2,...,2
+  //the indices are displaced by one counter for weights & error relative to z&a since w&e run from layer 2-L while z&a run from 1-L
   for(int layer=numberOfLayers-3;layer>-1;layer--){
-    fedforward = AdvanceLayer(Mnist.data[datum],layer);
-    sigmaprime = SigmoidDerivative(fedforward);
-    nodes_now = this->layers[layer];
-    nodes_next = this->layers[layer+1];
-    costder.resize(nodes_now,0.0);
+    sigmaprime = SigmoidDerivative(z[layer+1]);
+    nodes_now = this->layers[layer+1];
+    nodes_next = this->layers[layer+2];
+    costder.resize(nodes_now);
+    for(int node_now=0;node_now<nodes_now;node_now++){
+      costder[node_now] = 0.0;
+    }
+    Print_Vector(costder);
     for(int node_now=0;node_now<nodes_now;node_now++){
       for(int node_next=0;node_next<nodes_next;node_next++){
+	printf("%f ",core.weights[layer+1][node_next][node_now]);
 	costder[node_now] += this->core.weights[layer+1][node_next][node_now]*error[layer+1][node_next];
       }
+      printf("\n");
     }
+    printf("costder%d:",layer);
+    Print_Vector(costder);
     error[layer] = HadamardProduct(costder,sigmaprime);
+    printf("error%d:",layer);
+    Print_Vector(error[layer]);
   }
   //calculate gradient of cost function
   for(int layer=1;layer<numberOfLayers;layer++){
