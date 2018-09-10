@@ -13,8 +13,8 @@ int main(int argc, char* argv[]){
   std::string pathway = "data/";
   std::string data_name, label_name;
   MNISTData train, test;
-  //std::vector<int> layers(3);
-  //layers[0] = 784; layers[1] = 30; layers[2] = 10;
+  std::vector<int> layers(3);
+  layers[0] = 784; layers[1] = 30; layers[2] = 10;
   number_of_images=60000;
   data_of_an_image=28*28;
   data_name = pathway+"train-images.idx3-ubyte";
@@ -27,26 +27,26 @@ int main(int argc, char* argv[]){
   label_name = pathway+"t10k-labels.idx1-ubyte";
   test = ReadMNIST(data_name.c_str(),label_name.c_str(),number_of_images,data_of_an_image);
 
-  PrintMNIST(test.data,test.labels,0,5);
+  //PrintMNIST(test.data,test.labels,0,5);
+  /*
+  CNeuralNetwork net(layers);
+  int epochs=30;
+  int mbs=10;
+  double eta=3.0;
+  //  net.SGD(train,epochs,mbs,eta,test);
+  */
+
   /*
   CNeuralNetwork net(layers);
   SNNCore delta = net.BackPropogation(test,0);
   */
-  //*TESTING::********
+  //TESTING::********
   int number_of_layers=3;
-  std::vector<int> layers(number_of_layers);
+  //  std::vector<int> layers(number_of_layers);
   layers[0] = 1;
   layers[1] = 2;
   layers[2] = 3;
   CNeuralNetwork net(layers);
-  for(int i=0;i<number_of_layers-1;i++){
-    for(int j=0;j<layers[i+1];j++){
-      net.core.biases[i][j] = i + j;
-      for(int k=0;k<layers[i];k++){
-	net.core.weights[i][j][k] = -j+k+1;
-      }
-    }
-  }
 
   Print_Vector(net.layers);
   for(int i=0;i<number_of_layers-1;i++){
@@ -58,6 +58,7 @@ int main(int argc, char* argv[]){
     }
     printf("\n");
   }
+  /*
   std::vector<double> feed(1),fed;
   feed[0]=3.0;
   fed = net.FeedForward(feed);
@@ -72,7 +73,7 @@ int main(int argc, char* argv[]){
     printf("SM%d:\n",i);
     Print_Vector(feed);      
   }
-  
+  */
   MNISTData net_feed;
   net_feed.data = std::vector<std::vector<double> > (5,std::vector<double>(1));
   net_feed.labels = std::vector<double> (5);
@@ -82,10 +83,16 @@ int main(int argc, char* argv[]){
     }
     net_feed.labels[i] = 1;
   }
-  net.BackPropogation(net_feed,0);
-  
-  //  */
-
+  SNNCore delta = net.BackPropogation(net_feed,0);
+  for(int i=0;i<number_of_layers-1;i++){
+    printf("bias%d:",i+1);
+    Print_Vector(delta.biases[i]);
+    printf("weights%d:",i+1);
+    for(int j=0;j<layers[i+1];j++){
+      Print_Vector(delta.weights[i][j]);
+    }
+  }
+  //    */
 
   return 0;
 }

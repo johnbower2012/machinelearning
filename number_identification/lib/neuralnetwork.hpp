@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include <random>
 
 struct SNNCore{
   std::vector<double> *biases;
@@ -25,7 +26,9 @@ public:
   std::vector<double> AdvanceLayer(std::vector<double> Feed, int Layer);
   std::vector<double> CostDerivative(std::vector<double> Activations, std::vector<double> Labels);
   SNNCore BackPropogation(MNISTData Mnist, int datum);
+  void UpdateMiniBatch(MNISTData MiniBatch, double LearningRate);
   void SGD(MNISTData Train, int Epochs, int MiniBatchSize, double Eta, MNISTData Test);
+  double Evaluate(MNISTData test);
   
 };  
 
