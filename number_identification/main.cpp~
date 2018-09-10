@@ -13,7 +13,8 @@ int main(int argc, char* argv[]){
   std::string pathway = "data/";
   std::string data_name, label_name;
   MNISTData train, test;
-
+  std::vector<int> layers(3);
+  layers[0] = 784; layers[1] = 30; layers[2] = 10;
   number_of_images=60000;
   data_of_an_image=28*28;
   data_name = pathway+"train-images.idx3-ubyte";
@@ -27,16 +28,8 @@ int main(int argc, char* argv[]){
   test = ReadMNIST(data_name.c_str(),label_name.c_str(),number_of_images,data_of_an_image);
 
   PrintMNIST(test.data,test.labels,0,5);
-  std::vector<double> a(5),b(5),c(5);
-  for(int i=0;i<5;i++){
-    a[i] = 1+1/pow(10,i);
-    b[i] = 1;
-    c[i] = (Sigmoid(a[i]) - Sigmoid(b[i]))/(a[i]-b[i]);
-  }
-  Print_Vector(c);
-  c = SigmoidDerivative(b);
-  Print_Vector(c);
 
+  CNeuralNetwork net(layers);
 
   /*TESTING::********
   int number_of_layers=3;

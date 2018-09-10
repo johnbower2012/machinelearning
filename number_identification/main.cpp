@@ -13,7 +13,8 @@ int main(int argc, char* argv[]){
   std::string pathway = "data/";
   std::string data_name, label_name;
   MNISTData train, test;
-
+  std::vector<int> layers(3);
+  layers[0] = 784; layers[1] = 30; layers[2] = 10;
   number_of_images=60000;
   data_of_an_image=28*28;
   data_name = pathway+"train-images.idx3-ubyte";
@@ -27,6 +28,8 @@ int main(int argc, char* argv[]){
   test = ReadMNIST(data_name.c_str(),label_name.c_str(),number_of_images,data_of_an_image);
 
   PrintMNIST(test.data,test.labels,0,5);
+
+  CNeuralNetwork net(layers);
 
   /*TESTING::********
   int number_of_layers=3;

@@ -22,7 +22,7 @@ public:
   ~CNeuralNetwork();
 
   std::vector<double> FeedForward(std::vector<double> Feed);
-  std::vector<double> FeedForward(std::vector<double> Feed, int layer);
+  std::vector<double> AdvanceLayer(std::vector<double> Feed, int Layer);
   std::vector<double> CostDerivative(std::vector<double> Activations, std::vector<double> Labels);
   SNNCore BackPropogation(MNISTData Mnist, int datum);
   void SGD(MNISTData Train, int Epochs, int MiniBatchSize, double Eta, MNISTData Test);
@@ -32,7 +32,7 @@ public:
 inline double Sigmoid(double z);
 std::vector<double> Sigmoid(std::vector<double> Z);
 std::vector<double> SigmoidDerivative(std::vector<double> Z);
-std::vector<double> HadamardProduct(const std::vector<double> *a, const std::vector<double> *b);
+std::vector<double> HadamardProduct(const std::vector<double> &a, const std::vector<double> &b);
 std::vector<double> LabelToVector(int Label);
 template<class T>
 void Print_Vector(const std::vector<T> &vector);

@@ -23,7 +23,7 @@ public:
 
   std::vector<double> FeedForward(std::vector<double> Feed);
   std::vector<double> FeedForward(std::vector<double> Feed, int layer);
-  std::vector<double> CostDerivative(std::vector<double> Input);
+  std::vector<double> CostDerivative(std::vector<double> Activations, std::vector<double> Labels);
   SNNCore BackPropogation(MNISTData Mnist, int datum);
   void SGD(MNISTData Train, int Epochs, int MiniBatchSize, double Eta, MNISTData Test);
   
