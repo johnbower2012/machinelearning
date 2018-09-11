@@ -162,9 +162,9 @@ void CNeuralNetwork::UpdateMiniBatch(MNISTData MiniBatch, double LearningRate){
     nodes_now = this->layers[layer];
     nodes_next = this->layers[layer+1];
     for(int node_next=0;node_next<nodes_next;node_next++){
-      this->core.biases[layer][node_next] -= LearningRate*temp.biases[layer][node_next]/(double)minibatchsize;
+      this->core.biases[layer][node_next] -= LearningRate*temp.biases[layer][node_next];
       for(int node_now=0;node_now<nodes_now;node_now++){
-	this->core.weights[layer][node_next][node_now] -= LearningRate*delta.weights[layer][node_next][node_now]/(double)minibatchsize;
+	this->core.weights[layer][node_next][node_now] -= LearningRate*delta.weights[layer][node_next][node_now];
       }
     }
   }
@@ -236,7 +236,7 @@ int CNeuralNetwork::Evaluate(MNISTData Test){
     if(index==Test.labels[test]){
       ratio++;
     }
-  }
+   }
   return ratio;
 }
 /***********
