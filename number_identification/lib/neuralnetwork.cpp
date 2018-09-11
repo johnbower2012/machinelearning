@@ -1,27 +1,36 @@
 #include "neuralnetwork.hpp"
 
 CNeuralNetwork::CNeuralNetwork(const std::vector<int> &Layers){
-  std::default_random_engine generator;
-  std::normal_distribution<double> normal(0,1);
-  double random;
   this->layers = Layers;
-  int number_of_layers = Layers.size();
-  this->core.biases = new std::vector<double>[number_of_layers-1];
-  this->core.weights = new std::vector<std::vector<double> >[number_of_layers-1];
-  for(int i=0;i<number_of_layers-1;i++){
-    this->core.weights[i] = std::vector<std::vector<double> >(Layers[i+1],std::vector<double>(Layers[i]));
+  int numberOfLayers = Layers.size();
+  this->core.biases.resize(numberOfLayers-1);
+  this->core.weights.resize(numberOfLayers-1);
+  for(int i=0;i<numberOfLayers-1;i++){
     this->core.biases[i] = std::vector<double> (Layers[i+1]);
-    for(int j=0;j<Layers[i+1];j++){
-      this->core.biases[i][j] = normal(generator);
-      for(int k=0;k<Layers[i];k++){
-	this->core.weights[i][j][k] = normal(generator);
-      }
-    }
+    this->core.weights[i] = std::vector<std::vector<double> >(Layers[i+1],std::vector<double>(Layers[i]));
   }
 }
 CNeuralNetwork::~CNeuralNetwork(){
-  delete[] core.weights;
-  delete[] core.biases;
+}
+void CNeuralNetwork::Randomize(unsigned Seed, double Mean, double STDDev){
+  std::default_random_engine generator(Seed);
+  std::normal_distribution<double> normal(Mean,STDDev);
+
+  int numberOfLayers = this->layers.size();
+  int nodes_now,nodes_next;
+  for(int layer=0;layer<numberOfLayers-1;layer++){
+    this->core.weights[layer] = std::vector<std::vector<double> >(this->layers[layer+1],std::vector<double>(this->layers[layer]));
+    this->core.biases[layer] = std::vector<double> (this->layers[layer+1]);
+    nodes_now = this->layers[layer];
+    nodes_next = this->layers[layer+1];
+    for(int node_next=0;node_next<nodes_next;node_next++){
+      this->core.biases[layer][node_next] = normal(generator);
+      for(int node_now=0;node_now<nodes_now;node_now++){
+	this->core.weights[layer][node_next][node_now] = normal(generator);
+      }
+    }
+  }
+
 }
 std::vector<double> CNeuralNetwork::FeedForward(std::vector<double> Feed){
   int number_of_layers = this->layers.size();
@@ -32,7 +41,7 @@ std::vector<double> CNeuralNetwork::FeedForward(std::vector<double> Feed){
     temp_next.resize(nodes_next,0.0);
     for(int node_next=0;node_next<nodes_next;node_next++){
       for(int node_now=0;node_now<nodes_now;node_now++){
-	temp_next[node_next] = this->core.weights[layer][node_next][node_now]*temp_now[node_now];
+	temp_next[node_next] += this->core.weights[layer][node_next][node_now]*temp_now[node_now];
       }
       temp_next[node_next] += this->core.biases[layer][node_next];
     }
@@ -63,15 +72,15 @@ std::vector<double> CNeuralNetwork::CostDerivative(std::vector<double> Activatio
 SNNCore CNeuralNetwork::BackPropogation(MNISTData Mnist,int datum){
   int numberOfData = Mnist.labels.size(), nodes_next, nodes_now;
   std::vector<double> costder, fedforward, sigmaprime, label;
-  std::vector<double> *z, *activations, *error;
+  std::vector<std::vector<double> > z, activations, error;
   SNNCore delta;
   int numberOfLayers = this->layers.size();
   //dynamic memory allocation
-  z = new std::vector<double>[numberOfLayers];
-  activations = new std::vector<double>[numberOfLayers];
-  error = new std::vector<double>[numberOfLayers-1];
-  delta.biases = new std::vector<double>[numberOfLayers-1];
-  delta.weights = new std::vector<std::vector<double> >[numberOfLayers-1];
+  z.resize(numberOfLayers);
+  activations.resize(numberOfLayers);
+  error.resize(numberOfLayers-1);
+  delta.biases.resize(numberOfLayers-1);
+  delta.weights.resize(numberOfLayers-1);
   //assign memory && calculate activations
   z[0] = Mnist.data[datum];
   activations[0] = Mnist.data[datum];
@@ -115,9 +124,6 @@ SNNCore CNeuralNetwork::BackPropogation(MNISTData Mnist,int datum){
       }
     }
   }
-  //delete dynamic memory
-  delete[] activations;
-  delete[] error;
 
   //return gradient of cost function
   return delta;
@@ -127,11 +133,17 @@ void CNeuralNetwork::UpdateMiniBatch(MNISTData MiniBatch, double LearningRate){
   int numberOfLayers = this->layers.size();
   int nodes_next, nodes_now;
   SNNCore delta,temp;
-  delta.biases = new std::vector<double>[numberOfLayers-1];
-  delta.weights = new std::vector<std::vector<double> >[numberOfLayers-1];
+  delta.biases.resize(numberOfLayers-1);
+  delta.weights.resize(numberOfLayers-1);
   for(int i=0;i<numberOfLayers-1;i++){
     delta.weights[i] = std::vector<std::vector<double> >(this->layers[i+1],std::vector<double>(this->layers[i]));
     delta.biases[i] = std::vector<double> (this->layers[i+1]);
+    for(int j=0;j<this->layers[i+1];j++){
+      delta.biases[i][j] = 0.0;
+      for(int k=0;k<this->layers[i];k++){
+	delta.weights[i][j][k] = 0.0;
+      }
+    }
   }
   for(int mini=0;mini<minibatchsize;mini++){
     temp = this->BackPropogation(MiniBatch,mini);
@@ -162,50 +174,59 @@ void CNeuralNetwork::SGD(MNISTData Train, int Epochs, int MiniBatchSize, double 
   int trains=Train.labels.size();
   int datalength=Train.data[0].size();
   int minibatches=trains/MiniBatchSize;
+  int percent=0;
+  std::clock_t start, end;
   MNISTData minibatch;
-  double ratio;
+  int ratio;
   minibatch.data.resize(MiniBatchSize,std::vector<double>(datalength));
   minibatch.labels.resize(MiniBatchSize);
   std::vector<int>random;
   for(int i=0;i<trains;i++){
     random.push_back(i);
   }
+  //run SGD for epoch in Epochs
   for(int epoch=0;epoch<Epochs;epoch++){
+    //initial test
     if(tests>0){
       ratio=this->Evaluate(Test);
-      printf("Epoch%d: %d / %d \n",epoch,(int)ratio,tests);
+      printf("Epoch%d: %d / %d\n",epoch,ratio,tests);
     }
-
     //randomize minibatch order
     std::random_shuffle(random.begin(),random.end());
     //run minibatches
+    start = clock();
+    percent=0;
     for(int mb=0;mb<minibatches;mb++){
       for(int mbi=0;mbi<MiniBatchSize;mbi++){
 	minibatch.data[mbi] = Train.data[mb*MiniBatchSize+mbi];
 	minibatch.labels[mbi] = Train.labels[mb*MiniBatchSize+mbi];
       }
       this->UpdateMiniBatch(minibatch,Eta);
-      if(mb%1000==0){
-	printf("     mb: %d / %d\n",mb,minibatches);
+      if(mb%(minibatches/10)==0){
+	printf("     %d%%\n",percent);
+	percent+=10;
       }
     }
-    if(tests>0){
-      ratio=this->Evaluate(Test);
-      printf("Epoch%d: %d / %d \n",epoch,(int)ratio,tests);
-    }
+    end=clock();
+    printf("Time: %f\n",(end-start)/(double)CLOCKS_PER_SEC);
   }
+  //final test;
+  if(tests>0){
+    ratio=this->Evaluate(Test);
+    printf("Epoch%d: %d / %d \n",Epochs,ratio,tests);
+  }
+
 }
-double CNeuralNetwork::Evaluate(MNISTData Test){
+int CNeuralNetwork::Evaluate(MNISTData Test){
   std::vector<double> output=this->FeedForward(Test.data[0]);
   int tests=Test.labels.size();
   int outs=output.size();
-  int index;
-  double max, ratio=0.0;
+  int index,ratio=0;
+  double max;
 
-  for(int test=0;test<10;test++){
+  for(int test=0;test<tests;test++){
     output = this->FeedForward(Test.data[test]);
     max=0; index=0;
-    Print_Vector(output);
     for(int out=0;out<outs;out++){
       if(max<output[out]){
 	max=output[out];
@@ -214,11 +235,6 @@ double CNeuralNetwork::Evaluate(MNISTData Test){
     }
     if(index==Test.labels[test]){
       ratio++;
-    }
-    if(test%1000==0){
-      printf("label: %d  max:%f index:%d\n",(int)Test.labels[test],max,index);
-      Print_Vector(output);
-      printf("------\n");
     }
   }
   return ratio;

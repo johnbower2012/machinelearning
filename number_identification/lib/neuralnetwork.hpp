@@ -7,10 +7,11 @@
 #include <string>
 #include <cmath>
 #include <random>
+#include <ctime>
 
 struct SNNCore{
-  std::vector<double> *biases;
-  std::vector<std::vector<double> > *weights;
+  std::vector<std::vector<double> > biases;
+  std::vector<std::vector<std::vector<double> > > weights;
 };
 
 class CNeuralNetwork{
@@ -22,13 +23,14 @@ public:
   CNeuralNetwork(const std::vector<int> &Layers);
   ~CNeuralNetwork();
 
+  void Randomize(unsigned int Seed, double Mean, double STDDev);
   std::vector<double> FeedForward(std::vector<double> Feed);
   std::vector<double> AdvanceLayer(std::vector<double> Feed, int Layer);
   std::vector<double> CostDerivative(std::vector<double> Activations, std::vector<double> Labels);
   SNNCore BackPropogation(MNISTData Mnist, int datum);
   void UpdateMiniBatch(MNISTData MiniBatch, double LearningRate);
   void SGD(MNISTData Train, int Epochs, int MiniBatchSize, double Eta, MNISTData Test);
-  double Evaluate(MNISTData test);
+  int Evaluate(MNISTData test);
   
 };  
 
