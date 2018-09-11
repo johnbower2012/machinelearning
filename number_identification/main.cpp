@@ -28,21 +28,17 @@ int main(int argc, char* argv[]){
   test = ReadMNIST(data_name.c_str(),label_name.c_str(),number_of_images,data_of_an_image);
 
   //PrintMNIST(test.data,test.labels,0,5);
-  /*
+
   CNeuralNetwork net(layers);
   int epochs=30;
   int mbs=10;
   double eta=3.0;
-  //  net.SGD(train,epochs,mbs,eta,test);
-  */
+  net.SGD(train,epochs,mbs,eta,test);
+
 
   /*
-  CNeuralNetwork net(layers);
-  SNNCore delta = net.BackPropogation(test,0);
-  */
   //TESTING::********
   int number_of_layers=3;
-  //  std::vector<int> layers(number_of_layers);
   layers[0] = 1;
   layers[1] = 2;
   layers[2] = 3;
@@ -58,42 +54,16 @@ int main(int argc, char* argv[]){
     }
     printf("\n");
   }
-  /*
   std::vector<double> feed(1),fed;
   feed[0]=3.0;
   fed = net.FeedForward(feed);
   printf("output:\n");
   Print_Vector(fed);
-  feed[0]=3.0;
-  for(int i=0;i<number_of_layers-1;i++){
-    printf("AL%d:\n",i);
-    fed = net.AdvanceLayer(feed,i);
-    Print_Vector(fed);
-    feed = Sigmoid(fed);
-    printf("SM%d:\n",i);
-    Print_Vector(feed);      
-  }
-  */
-  MNISTData net_feed;
-  net_feed.data = std::vector<std::vector<double> > (5,std::vector<double>(1));
-  net_feed.labels = std::vector<double> (5);
-  for(int i=0;i<5;i++){
-    for(int j=0;j<1;j++){
-      net_feed.data[i][j] = 3.0;
-    }
-    net_feed.labels[i] = 1;
-  }
-  SNNCore delta = net.BackPropogation(net_feed,0);
-  for(int i=0;i<number_of_layers-1;i++){
-    printf("bias%d:",i+1);
-    Print_Vector(delta.biases[i]);
-    printf("weights%d:",i+1);
-    for(int j=0;j<layers[i+1];j++){
-      Print_Vector(delta.weights[i][j]);
-    }
-  }
-  //    */
-
+  feed[0]=9.0;
+  fed = net.FeedForward(feed);
+  printf("output:\n");
+  Print_Vector(fed);
+*/
   return 0;
 }
 
