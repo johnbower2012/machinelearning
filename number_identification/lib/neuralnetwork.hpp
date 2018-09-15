@@ -20,7 +20,7 @@ public:
   SNNCore core;
 
   CNeuralNetwork();
-  CNeuralNetwork(const std::vector<int> &Layers);
+  CNeuralNetwork(std::vector<int> Layers);
   ~CNeuralNetwork();
 
   void Randomize(unsigned int Seed, double Mean, double STDDev);
@@ -37,9 +37,9 @@ public:
 inline double Sigmoid(double z);
 std::vector<double> Sigmoid(std::vector<double> Z);
 std::vector<double> SigmoidDerivative(std::vector<double> Z);
-std::vector<double> HadamardProduct(const std::vector<double> &a, const std::vector<double> &b);
+std::vector<double> HadamardProduct(std::vector<double> a, std::vector<double> b);
 std::vector<double> LabelToVector(int Label);
 template<class T>
-void Print_Vector(const std::vector<T> &vector);
+void Print_Vector(std::vector<T> vector);
 
 #endif

@@ -36,10 +36,10 @@ int main(int argc, char* argv[]){
   net.Randomize(seed,mean,stddev);
   int epochs=30;
   int mbs=10;
-  double eta=3.0;
-  //  net.SGD(train,epochs,mbs,eta,test);
+  double eta=0;
+  net.SGD(train,epochs,mbs,eta,test);
 
-  
+  /*  
   std::vector<double> vec(784),out(10);
   for(int j=0;j<5;j++){
     vec = test.data[j];
@@ -54,7 +54,7 @@ int main(int argc, char* argv[]){
     printf("\n\n");
 
   }
-    
+  */
     
 
   /*

@@ -7,6 +7,7 @@
 #include <string>
 #include <cmath>
 #include <random>
+#include <ctime>
 
 struct SNNCore{
   std::vector<std::vector<double> > biases;

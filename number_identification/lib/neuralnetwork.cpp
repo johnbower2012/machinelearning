@@ -1,6 +1,6 @@
 #include "neuralnetwork.hpp"
 
-CNeuralNetwork::CNeuralNetwork(const std::vector<int> &Layers){
+CNeuralNetwork::CNeuralNetwork(std::vector<int> Layers){
   this->layers = Layers;
   int numberOfLayers = Layers.size();
   this->core.biases.resize(numberOfLayers-1);
@@ -19,8 +19,6 @@ void CNeuralNetwork::Randomize(unsigned Seed, double Mean, double STDDev){
   int numberOfLayers = this->layers.size();
   int nodes_now,nodes_next;
   for(int layer=0;layer<numberOfLayers-1;layer++){
-    this->core.weights[layer] = std::vector<std::vector<double> >(this->layers[layer+1],std::vector<double>(this->layers[layer]));
-    this->core.biases[layer] = std::vector<double> (this->layers[layer+1]);
     nodes_now = this->layers[layer];
     nodes_next = this->layers[layer+1];
     for(int node_next=0;node_next<nodes_next;node_next++){
@@ -30,14 +28,15 @@ void CNeuralNetwork::Randomize(unsigned Seed, double Mean, double STDDev){
       }
     }
   }
-
 }
 std::vector<double> CNeuralNetwork::FeedForward(std::vector<double> Feed){
   int number_of_layers = this->layers.size();
   std::vector<double> temp_next,temp_now=Feed;
+  int nodes_next, nodes_now;
   for(int layer=0;layer<number_of_layers-1;layer++){
-    int nodes_now=layers[layer];
-    int nodes_next=layers[layer+1];
+    nodes_now=layers[layer];
+    nodes_next=layers[layer+1];
+    temp_next.resize(0);
     temp_next.resize(nodes_next,0.0);
     for(int node_next=0;node_next<nodes_next;node_next++){
       for(int node_now=0;node_now<nodes_now;node_now++){
@@ -52,11 +51,12 @@ std::vector<double> CNeuralNetwork::FeedForward(std::vector<double> Feed){
 std::vector<double> CNeuralNetwork::AdvanceLayer(std::vector<double> Feed, int Layer){
   std::vector<double> temp_next,temp_now=Feed;
   int nodes_next = this->layers[Layer+1];
+  temp_next.resize(0);
   temp_next.resize(nodes_next,0.0);
   for(int node_next=0;node_next<nodes_next;node_next++){
     int nodes_now = this->layers[Layer];
     for(int node_now=0;node_now<nodes_now;node_now++){
-      temp_next[node_next] = this->core.weights[Layer][node_next][node_now]*temp_now[node_now];
+      temp_next[node_next] += this->core.weights[Layer][node_next][node_now]*temp_now[node_now];
     }
     temp_next[node_next] += this->core.biases[Layer][node_next];
   }
@@ -87,8 +87,10 @@ SNNCore CNeuralNetwork::BackPropogation(MNISTData Mnist,int datum){
   for(int layer=0;layer<numberOfLayers-1;layer++){
     z[layer+1] = AdvanceLayer(activations[layer],layer);
     activations[layer+1] = Sigmoid(z[layer+1]);
-    delta.biases[layer] = std::vector<double> (this->layers[layer+1]);
-    delta.weights[layer] = std::vector<std::vector<double> > (this->layers[layer+1],std::vector<double>(this->layers[layer]));
+    nodes_next=this->layers[layer+1];
+    nodes_now=this->layers[layer];
+    delta.biases[layer] = std::vector<double> (nodes_next,0.0);
+    delta.weights[layer] = std::vector<std::vector<double> > (nodes_next,std::vector<double>(nodes_now,0.0));
   }
   //calculate error for final layer
   label = LabelToVector(Mnist.labels[datum]);
@@ -96,15 +98,14 @@ SNNCore CNeuralNetwork::BackPropogation(MNISTData Mnist,int datum){
   sigmaprime = SigmoidDerivative(z[numberOfLayers-1]);
   error[numberOfLayers-2] = HadamardProduct(costder,sigmaprime);
   //calculate error for each layer, final-1, final-2,...,2
-  //the indices are displaced by one counter for weights & error relative to z&a since w&e run from layer 2-L while z&a run from 1-L
+  //the indices are displaced by one counter for weights & error relative to z&a 
+  //     since w&e run from layer 2-L while z&a run from 1-L
   for(int layer=numberOfLayers-3;layer>-1;layer--){
     sigmaprime = SigmoidDerivative(z[layer+1]);
     nodes_now = this->layers[layer+1];
     nodes_next = this->layers[layer+2];
-    costder.resize(nodes_now);
-    for(int node_now=0;node_now<nodes_now;node_now++){
-      costder[node_now] = 0.0;
-    }
+    costder.resize(0);
+    costder.resize(nodes_now,0.0);
     for(int node_now=0;node_now<nodes_now;node_now++){
       for(int node_next=0;node_next<nodes_next;node_next++){
 	costder[node_now] += this->core.weights[layer+1][node_next][node_now]*error[layer+1][node_next];
@@ -135,16 +136,13 @@ void CNeuralNetwork::UpdateMiniBatch(MNISTData MiniBatch, double LearningRate){
   SNNCore delta,temp;
   delta.biases.resize(numberOfLayers-1);
   delta.weights.resize(numberOfLayers-1);
-  for(int i=0;i<numberOfLayers-1;i++){
-    delta.weights[i] = std::vector<std::vector<double> >(this->layers[i+1],std::vector<double>(this->layers[i]));
-    delta.biases[i] = std::vector<double> (this->layers[i+1]);
-    for(int j=0;j<this->layers[i+1];j++){
-      delta.biases[i][j] = 0.0;
-      for(int k=0;k<this->layers[i];k++){
-	delta.weights[i][j][k] = 0.0;
-      }
-    }
+  for(int layer=0;layer<numberOfLayers-1;layer++){
+    nodes_now = this->layers[layer];
+    nodes_next = this->layers[layer+1];
+    delta.biases[layer] = std::vector<double> (nodes_next,0.0);
+    delta.weights[layer] = std::vector<std::vector<double> >(nodes_next,std::vector<double>(nodes_now,0.0));
   }
+
   for(int mini=0;mini<minibatchsize;mini++){
     temp = this->BackPropogation(MiniBatch,mini);
     for(int layer=0;layer<numberOfLayers-1;layer++){
@@ -162,7 +160,7 @@ void CNeuralNetwork::UpdateMiniBatch(MNISTData MiniBatch, double LearningRate){
     nodes_now = this->layers[layer];
     nodes_next = this->layers[layer+1];
     for(int node_next=0;node_next<nodes_next;node_next++){
-      this->core.biases[layer][node_next] -= LearningRate*temp.biases[layer][node_next];
+      this->core.biases[layer][node_next] -= LearningRate*delta.biases[layer][node_next];
       for(int node_now=0;node_now<nodes_now;node_now++){
 	this->core.weights[layer][node_next][node_now] -= LearningRate*delta.weights[layer][node_next][node_now];
       }
@@ -178,8 +176,12 @@ void CNeuralNetwork::SGD(MNISTData Train, int Epochs, int MiniBatchSize, double 
   std::clock_t start, end;
   MNISTData minibatch;
   int ratio;
-  minibatch.data.resize(MiniBatchSize,std::vector<double>(datalength));
-  minibatch.labels.resize(MiniBatchSize);
+  int index;
+  printf("pass\n");
+
+  minibatch.data.resize(MiniBatchSize,std::vector<double>(datalength,0.0));
+  minibatch.labels.resize(MiniBatchSize,0.0);
+  //create index vectr for randomizing training data
   std::vector<int>random;
   for(int i=0;i<trains;i++){
     random.push_back(i);
@@ -198,10 +200,12 @@ void CNeuralNetwork::SGD(MNISTData Train, int Epochs, int MiniBatchSize, double 
     percent=0;
     for(int mb=0;mb<minibatches;mb++){
       for(int mbi=0;mbi<MiniBatchSize;mbi++){
-	minibatch.data[mbi] = Train.data[mb*MiniBatchSize+mbi];
-	minibatch.labels[mbi] = Train.labels[mb*MiniBatchSize+mbi];
+	index = random[mb*MiniBatchSize+mbi];
+	minibatch.data[mbi] = Train.data[index];
+	minibatch.labels[mbi] = Train.labels[index];
       }
       this->UpdateMiniBatch(minibatch,Eta);
+
       if(mb%(minibatches/10)==0){
 	printf("     %d%%\n",percent);
 	percent+=10;
@@ -266,7 +270,7 @@ std::vector<double> SigmoidDerivative(std::vector<double> Z){
   }
   return sigmoidder;
 }
-std::vector<double> HadamardProduct(const std::vector<double> &a, const std::vector<double> &b){
+std::vector<double> HadamardProduct(std::vector<double> a, std::vector<double> b){
   int size = a.size();
   std::vector<double> c(size);
   for(int i=0;i<size;i++){
@@ -280,7 +284,7 @@ std::vector<double> LabelToVector(int Label){
   return vector;
 }
 template<class T>
-void Print_Vector(const std::vector<T> &vector){
+void Print_Vector(std::vector<T> vector){
   int size = vector.size();
   for(int i=0;i<size;i++){
     printf("%f ",(double)vector[i]);
